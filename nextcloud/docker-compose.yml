@@ -1,0 +1,33 @@
+version: '2'
+
+volumes:
+  nextcloud_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /mnt/sda1/docker/nextcloud
+  nextcloud_html:
+    driver: local
+
+services:
+  app:
+    container_name: nextcloud
+    image: nextcloud
+    ports:
+      - 9020:80
+    volumes:
+      - nextcloud_html:/var/www/html
+      - nextcloud_data:/var/www/html/data
+    environment:
+      - MYSQL_PASSWORD=nextcloud
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=mariadb
+    restart: unless-stopped
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
