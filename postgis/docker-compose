@@ -1,0 +1,19 @@
+services:
+  postgis:
+    image: postgis/postgis
+    container_name: postgis
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      start_period: 10s
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgis_data:
+    driver: local
