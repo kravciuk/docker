@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  angie:
+    image: docker.angie.software/angie:latest
+    container_name: angie
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/angie/html:ro
+      - ./angie.conf:/etc/angie/angie.conf:ro
+    restart: unless-stopped

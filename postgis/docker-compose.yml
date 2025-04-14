@@ -1,9 +1,9 @@
 services:
   postgis:
-    image: postgis/postgis:16-3.5-alpine
+    image: postgis/postgis:17-master
     container_name: postgis
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}    
+      POSTGRES_PASSWORD: dockerpass   
     volumes:
       - postgis_data:/var/lib/postgresql/data
     ports:

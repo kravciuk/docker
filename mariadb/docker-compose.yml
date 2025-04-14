@@ -2,8 +2,9 @@ services:
   mariadb:
     image: mariadb:latest
     container_name: mariadb
+    env_file: .env
     environment:
-      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_ROOT_PASSWORD: dockerpass
     volumes:
       - mariadb_data:/var/lib/mysql
       - mariadb_config:/etc/mysql/conf.d
@@ -20,4 +21,6 @@ services:
 
 volumes:
   mariadb_data:
+    driver: local
+  mariadb_config:
     driver: local
