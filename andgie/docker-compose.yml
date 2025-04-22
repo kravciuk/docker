@@ -3,9 +3,22 @@ services:
   angie:
     image: docker.angie.software/angie:latest
     container_name: angie
+    networks:
+      - web
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./html:/usr/share/angie/html:ro
       - ./angie.conf:/etc/angie/angie.conf:ro
-    restart: unless-stopped
+      - ./conf.d:/etc/angie/conf.d:ro
+      - ./logs:/var/log/angie
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    restart: always
+
+networks:
+  web:
+    name: web
+    external: true

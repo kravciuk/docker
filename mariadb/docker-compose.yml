@@ -24,3 +24,9 @@ volumes:
     driver: local
   mariadb_config:
     driver: local
+
+
+networks:
+  web:
+    name: web
+    external: true

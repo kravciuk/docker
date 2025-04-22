@@ -1,0 +1,33 @@
+# Modified from https://blog.ssdnodes.com/blog/installing-nextcloud-docker/ to include draw.io
+version: '3' 
+
+services:
+
+  image-export:
+    image: jgraph/export-server
+    container_name: drawio-export
+    # expose:
+    #   - "8000"
+    networks:
+      - web
+    volumes:
+      - ./fonts:/usr/share/fonts/drawio 
+    restart: unless-stopped
+  
+  drawio:
+    image: jgraph/drawio
+    container_name: drawio
+    networks:
+      - web
+    depends_on:
+      - image-export
+    environment:
+      - VIRTUAL_HOST=drawio.self.xtweb.eu
+      - VIRTUAL_PORT=8080
+      - EXPORT_URL=http://drawio-export:8000/
+    restart: unless-stopped
+
+networks:
+  web:
+    name: web
+    external: true

@@ -7,3 +7,12 @@ services:
       - "7843:7843"
     volumes:
       - /home/user/p3x-redis-ui-settings:/settings
+    networks:
+      - web
+    restart: always
+
+networks:
+  web:
+    name: web
+    external: true
+
