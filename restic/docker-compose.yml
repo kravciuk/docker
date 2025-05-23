@@ -1,0 +1,35 @@
+services:
+  restic:
+    image: restic/restic:latest
+    container_name: restic_backup
+    environment:
+      - RESTIC_REPOSITORY=/backup-repo/local
+      - BACKUP_CRON_SCHEDULE=0 2 * * *  # Run daily at 2 AM
+    volumes:
+      - /etc:/backup/etc:ro
+      - /www:/backup/www:ro
+      - /home/vadim:/backup/home/vadim:ro
+      - /var/lib/docker/volumes:/backup/docker_volumes:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/sda1/samba/backup/local:/backup-repo/local
+      - /mnt/sda1/samba/temp:/restore
+    entrypoint: /bin/sh
+    command: |
+      -c "
+      # Initialize repository if it doesn't exist (no encryption)
+      restic init --insecure-no-password || true
+      # Run initial backup
+      restic backup --compression auto --insecure-no-password /backup/etc /backup/www /backup/home/vadim /backup/docker_volumes
+      # Run backups in a loop
+      while true; do
+        if [ \$(date +%w) -eq 0 ]; then
+          restic backup --compression auto --insecure-no-password /backup/etc /backup/www /backup/home/vadim /backup/docker_volumes
+        else
+          restic backup --compression auto --insecure-no-password --parent latest /backup/etc /backup/www /backup/home/vadim /backup/docker_volumes
+        fi
+        restic forget --insecure-no-password --keep-last 2 --prune
+        chown -R 1000:1000 /backup-repo/local
+        sleep 86400
+      done
+      "
+    restart: unless-stopped
