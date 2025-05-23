@@ -3,6 +3,8 @@ services:
     image: linuxserver/qbittorrent:latest
     container_name: qbit
     restart: unless-stopped
+    networks:
+      - web    
     environment:
       - PUID=1000
       - PGID=1000
@@ -15,7 +17,10 @@ services:
       - /tmp/torrents:/downloads-incomplete
       - /mnt/sda1/samba/torrents:/downloads-complete
     ports:
-      - '9010:8080'
       - '6881:6881'
       - '6881:6881/udp'
-      
+
+networks:
+  web:
+    name: web
+    external: true
