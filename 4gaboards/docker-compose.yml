@@ -1,0 +1,30 @@
+# https://docs.4gaboards.com/docs/dev/install/docker-vars
+
+services:
+  4gaBoards:
+    image: ghcr.io/rargames/4gaboards:latest
+    container_name: gaboards
+    restart: unless-stopped
+    networks:
+      - web
+    volumes:
+      - user-avatars:/app/public/user-avatars
+      - project-background-images:/app/public/project-background-images
+      - attachments:/app/private/attachments
+    # ports:
+    #   - 3012:1337
+    environment:
+      BASE_URL: https://tasks.self.xtweb.eu
+      SECRET_KEY: notsecretkey
+      DATABASE_URL: postgresql://vadim:vadim@postgis/gaboards
+      NODE_ENV: production
+      ## Add optional 4ga Boards instance variables here
+
+volumes:
+  user-avatars:
+  project-background-images:
+  attachments:
+networks:
+  web:
+    name: web
+    external: true

@@ -8,6 +8,9 @@ services:
     
     # Пользователь с UID:GID 1000:1000
     user: 1000:1000
+
+    networks:
+      - web    
     
     ports:
       - "8096:8096"  # HTTP веб-интерфейс
@@ -23,6 +26,7 @@ services:
       # Медиа файлы (только для чтения)
       - /mnt/sda1/samba/Music:/media/music:ro
       - /mnt/sda1/samba/Video:/media/video:ro
+      - /mnt/sda1/samba/Photos:/media/photos:ro
     
     environment:
       - JELLYFIN_PublishedServerUrl=https://media.self.xtweb.eu

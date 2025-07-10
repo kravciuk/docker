@@ -1,0 +1,26 @@
+# https://github.com/siyuan-note/siyuan
+
+services:
+  main:
+    image: b3log/siyuan
+    container_name: notes
+    command: ['--workspace=/siyuan/workspace/', '--accessAuthCode=${SIYUAN_ACCESS_AUTH_CODE}']
+    env_file:
+      - ./.env    
+    ports:
+      - 6806:6806
+    volumes:
+      - workspace:/siyuan/workspace
+    restart: unless-stopped
+    environment:
+      # A list of time zone identifiers can be found at https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+      - TZ=Europe/Vilnius
+      # - PUID=${YOUR_USER_PUID}  # Customize user ID
+      # - PGID=${YOUR_USER_PGID}  # Customize group I
+
+volumes:
+  workspace:
+networks:
+  web:
+    name: web
+    external: true
