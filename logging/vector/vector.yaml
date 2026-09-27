@@ -1,0 +1,109 @@
+data_dir: /var/lib/vector
+
+sources:
+  angie_access:
+    type: file
+    include:
+      - /var/log/nginx/access.log
+    read_from: end
+
+  angie_error:
+    type: file
+    include:
+      - /var/log/nginx/error.log
+    read_from: end
+
+  docker:
+    type: docker_logs
+    exclude_containers:
+      - vector
+      - angie
+
+  vector_metrics:
+    type: internal_metrics
+
+transforms:
+  angie_access_parsed:
+    type: remap
+    inputs:
+      - angie_access
+    source: |
+      parsed, err = parse_json(.message)
+      if err == null {
+        . = merge!(., parsed)
+      }
+
+      ts, terr = parse_timestamp(.time, format: "%+")
+      if terr == null {
+        .timestamp = ts
+      } else {
+        .timestamp = now()
+      }
+
+      if exists(.request) {
+        .message = .request
+      }
+
+      .source = "angie-access"
+      .container_name = "angie"
+      del(.file)
+
+  angie_error_parsed:
+    type: remap
+    inputs:
+      - angie_error
+    source: |
+      parsed, err = parse_regex(.message, r'^(?P<ts>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<level>\w+)\] (?P<msg>.*)$')
+      if err == null {
+        .level = parsed.level
+        .message = parsed.msg
+
+        ts, terr = parse_timestamp(parsed.ts, format: "%Y/%m/%d %H:%M:%S")
+        if terr == null {
+          .timestamp = ts
+        }
+      }
+
+      if !exists(.timestamp) {
+        .timestamp = now()
+      }
+
+      .source = "angie-error"
+      .container_name = "angie"
+      del(.file)
+
+  docker_parsed:
+    type: remap
+    inputs:
+      - docker
+    source: |
+      # Если контейнер (например Django с python-json-logger) пишет в stdout
+      # готовый JSON — разбираем его поля. Иначе оставляем message как есть.
+      parsed, err = parse_json(.message)
+      if err == null {
+        . = merge!(., parsed)
+      }
+
+      .source = "docker"
+
+sinks:
+  victorialogs:
+    type: http
+    inputs:
+      - angie_access_parsed
+      - angie_error_parsed
+      - docker_parsed
+    uri: "http://victorialogs:9428/insert/jsonline?_stream_fields=source,container_name&_msg_field=message&_time_field=timestamp"
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    compression: gzip
+    healthcheck:
+      enabled: false
+
+  prom_exporter:
+    type: prometheus_exporter
+    inputs:
+      - vector_metrics
+    address: "0.0.0.0:9598"

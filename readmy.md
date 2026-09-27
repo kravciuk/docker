@@ -30,6 +30,7 @@
 
 8110 - MeTube
 8120 (API), 8121 (UI)  - Rustak
+8130 - graphana, 8131 - victoriametrics, 8132 - victorialogs
 
 ---
 
