@@ -4,7 +4,7 @@ docker run -d \
   --security-opt apparmor=unconfined \
   -p 2342:2342 \
   -e PHOTOPRISM_UPLOAD_NSFW="true" \
-  -e PHOTOPRISM_ADMIN_PASSWORD="iddqd" \
+  -e PHOTOPRISM_ADMIN_PASSWORD="" \
   -v ~/PhotoPrism/storage:/photoprism/storage \
   -v /mnt/sda1/samba/Photos:/photoprism/originals \
   photoprism/photoprism:latest
