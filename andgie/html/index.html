@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lines — Game</title>
+  <style>
+    :root{--bg:#0f1724;--board:#0b1220;--cell:#1a2233;--cell-border:#2d3b55;--accent:#ffcf56}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#071226 0%,#081426 100%);color:#e6eef8}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+    .panel{display:flex;gap:24px;align-items:flex-start}
+    .board{background:var(--board);padding:12px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.6)}
+    .grid{display:grid;grid-template-columns:repeat(9,48px);grid-auto-rows:48px;gap:2px}
+    .cell{width:48px;height:48px;border-radius:6px;background:var(--cell);border:1px solid var(--cell-border);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;user-select:none}
+    .cell.highlight{outline:2px solid rgba(255,255,255,.08);}
+    .ball{width:34px;height:34px;border-radius:50%;box-shadow:inset -4px -4px 10px rgba(255,255,255,.06),0 6px 12px rgba(2,6,23,.6);transition:transform .18s linear,opacity .18s linear}
+    .ball.r{background:radial-gradient(circle at 30% 30%,#fff5f5,#ff0000)}
+    .ball.g{background:radial-gradient(circle at 30% 30%,#f5fff5,#00cc00)}
+    .ball.b{background:radial-gradient(circle at 30% 30%,#f0f8ff,#0066ff)}
+    .ball.y{background:radial-gradient(circle at 30% 30%,#ffffe5,#ffcc00)}
+    .ball.p{background:radial-gradient(circle at 30% 30%,#fff0ff,#cc00cc)}
+    .ball.c{background:radial-gradient(circle at 30% 30%,#f0ffff,#00cccc)}    
+    .ball.sel{transform:scale(1.15);box-shadow:0 10px 18px rgba(0,0,0,.5)}
+    .info{width:260px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02), rgba(255,255,255,.01));padding:12px;border-radius:12px}
+    h1{font-size:18px;margin:0 0 6px 0}
+    .score{font-weight:700;font-size:28px;margin:6px 0}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{background:#0b1220;color:#9fb6d9;border:1px solid rgba(255,255,255,.03);padding:8px 10px;border-radius:8px;cursor:pointer}
+    .next{display:flex;gap:8px;margin-top:12px}
+    .next .ball{width:28px;height:28px}
+    footer{margin-top:12px;font-size:12px;color:#9fb6d9;opacity:.8}
+    @media (max-width:720px){.grid{grid-template-columns:repeat(9,36px);grid-auto-rows:36px}.cell{width:36px;height:36px}.ball{width:26px;height:26px}.info{width:180px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="board card">
+        <div id="grid" class="grid" aria-label="Game Board"></div>
+      </div>
+
+      <div class="info">
+        <div class="card">
+          <h1>Lines — Classic Game</h1>
+          <div>Rules: Move a ball along free cells. Form a line of 5 or more same-colored balls (horizontal, vertical, or diagonal) to score points.</div>
+          <div class="score">Score: <span id="score">0</span></div>
+          <div class="controls">
+            <button id="newGame">New Game</button>
+            <button id="undo" title="Undo">Undo</button>
+          </div>
+          <div style="margin-top:10px">Next:</div>
+          <div class="next" id="nextRow"></div>
+          <footer>Click a ball, then click an empty cell. Good luck!</footer>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const ROWS = 9, COLS = 9, START_BALLS = 5, NEXT_COUNT = 3, CLEAR_LEN = 5;
+    const colors = ['r','g','b','y','p','c'];
+
+    const gridEl = document.getElementById('grid');
+    const scoreEl = document.getElementById('score');
+    const nextRowEl = document.getElementById('nextRow');
+    const newBtn = document.getElementById('newGame');
+    const undoBtn = document.getElementById('undo');
+
+    let board = [];
+    let selected = null;
+    let nextBalls = [];
+    let score = 0;
+    let history = [];
+
+    function idx(r,c){return r*COLS+c}
+    function rc(i){return [Math.floor(i/COLS), i%COLS]}
+
+    function randChoice(arr){return arr[Math.floor(Math.random()*arr.length)]}
+    function emptyCells(){return board.map((v,i)=>v?null:i).filter(v=>v!==null)}
+    function spawnRandom(n, toBoard=true){
+      const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+      shuffle(empties);
+      const res = [];
+      for(let i=0;i<n && empties.length;i++){
+        const id = empties.pop();
+        const color = randChoice(colors);
+        if(toBoard) board[id] = {c:color};
+        res.push({id,color});
+      }
+      return res;
+    }
+
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+
+    function createGrid(){
+      gridEl.innerHTML='';
+      board = new Array(ROWS*COLS).fill(null);
+      for(let i=0;i<ROWS*COLS;i++){
+        const cell = document.createElement('div');
+        cell.className='cell';
+        cell.dataset.i = i;
+        cell.addEventListener('click', onCellClick);
+        gridEl.appendChild(cell);
+      }
+    }
+
+    function render(){
+      for(let i=0;i<ROWS*COLS;i++){
+        const el = gridEl.children[i];
+        el.classList.toggle('highlight', selected==i);
+        el.innerHTML='';
+        const item = board[i];
+        if(item){
+          const ball = document.createElement('div');
+          ball.className = 'ball ' + item.c + (selected==i? ' sel':'');
+          el.appendChild(ball);
+        }
+      }
+      scoreEl.textContent = score;
+      renderNext();
+    }
+
+    function renderNext(){
+      nextRowEl.innerHTML='';
+      nextBalls.forEach(b=>{
+        const dot = document.createElement('div');
+        dot.className = 'ball '+b.c;
+        nextRowEl.appendChild(dot);
+      })
+    }
+
+    function onCellClick(e){
+      const i = +e.currentTarget.dataset.i;
+      if(board[i]){
+        selected = i;
+        render();
+      } else if(selected!=null){
+        const path = findPath(selected,i);
+        if(path){
+          pushHistory();
+          board[i] = board[selected];
+          board[selected] = null;
+          selected = null;
+          render();
+          const removed = clearAllLinesAt([i]);
+          if(removed.length===0){
+            spawnNextToBoard();
+          } else {
+            score += removed.length;
+          }
+          if(emptyCells().length===0){
+            alert('Game Over! Score: '+score);
+          }
+        }
+      }
+    }
+
+    function pushHistory(){
+      history.push({board:board.map(b=>b?{c:b.c}:null), score, nextBalls: JSON.parse(JSON.stringify(nextBalls))});
+      if(history.length>20) history.shift();
+    }
+
+    function undo(){
+      if(!history.length) return;
+      const state = history.pop();
+      board = state.board.map(b=>b?{c:b.c}:null);
+      score = state.score;
+      nextBalls = state.nextBalls;
+      selected = null;
+      render();
+    }
+
+    function findPath(from,to){
+      if(from===to) return [from];
+      const q=[from];
+      const prev = new Array(ROWS*COLS).fill(-1);
+      prev[from]=from;
+      while(q.length){
+        const cur = q.shift();
+        const [r,c] = rc(cur);
+        const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        for(const [dr,dc] of dirs){
+          const nr=r+dr,nc=c+dc;
+          if(nr<0||nr>=ROWS||nc<0||nc>=COLS) continue;
+          const id = idx(nr,nc);
+          if(prev[id]!==-1) continue;
+          if(board[id]) continue;
+          prev[id]=cur;
+          if(id===to){
+            const path=[id];
+            let p=cur;
+            while(p!==from){path.push(p);p=prev[p]}path.push(from);path.reverse();
+            return path;
+          }
+          q.push(id);
+        }
+      }
+      return null;
+    }
+
+    function clearAllLinesAt(){
+      const toRemove = new Set();
+      for(let i=0;i<ROWS*COLS;i++){
+        if(!board[i]) continue;
+        const col = board[i].c;
+        const [r,c] = rc(i);
+        const dirs = [[1,0],[0,1],[1,1],[1,-1]];
+        for(const [dr,dc] of dirs){
+          const temp = [i];
+          let rr=r+dr, cc=c+dc;
+          while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&board[idx(rr,cc)]&&board[idx(rr,cc)].c===col){temp.push(idx(rr,cc));rr+=dr;cc+=dc}
+          rr=r-dr; cc=c-dc;
+          while(rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&board[idx(rr,cc)]&&board[idx(rr,cc)].c===col){temp.unshift(idx(rr,cc));rr-=dr;cc-=dc}
+          if(temp.length>=CLEAR_LEN){temp.forEach(x=>toRemove.add(x))}
+        }
+      }
+      const removed = Array.from(toRemove).sort((a,b)=>a-b);
+      removed.forEach(i=>board[i]=null);
+      if(removed.length) score += removed.length*2;
+      render();
+      return removed;
+    }
+
+    function spawnNextToBoard(){
+      pushHistory();
+      const empties = board.map((v,i)=>v?null:i).filter(v=>v!==null);
+      shuffle(empties);
+      for(let b of nextBalls){
+        if(empties.length===0) break;
+        const id = empties.pop();
+        board[id] = {c:b.c};
+      }
+      let removed = clearAllLinesAt([]);
+      nextBalls = [];
+      for(let i=0;i<NEXT_COUNT;i++) nextBalls.push({c:randChoice(colors)});
+      render();
+    }
+
+    function newGame(){
+      history = [];
+      score = 0;
+      selected = null;
+      createGrid();
+      nextBalls = [];
+      for(let i=0;i<NEXT_COUNT;i++) nextBalls.push({c:randChoice(colors)});
+      spawnRandom(START_BALLS,true);
+      render();
+    }
+
+    newBtn.addEventListener('click', newGame);
+    undoBtn.addEventListener('click', undo);
+
+    createGrid();
+    newGame();
+  </script>
+</body>
+</html>

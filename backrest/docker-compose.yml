@@ -1,0 +1,37 @@
+version: "3.8"
+services:
+  backrest:
+    image: ghcr.io/garethgeorge/backrest:latest
+    container_name: backrest
+    hostname: backrest
+    networks:
+      - web
+    volumes:
+      - ./backrest/data:/data
+      - ./backrest/config:/config
+      - ./backrest/cache:/cache
+      - ./backrest/tmp:/tmp
+      - ./backrest/rclone:/root/.config/rclone # Mount for rclone config (needed when using rclone remotes)
+      - /etc:/backup/etc:ro
+      - /www:/backup/www:ro
+      - /home/vadim:/backup/home/vadim:ro
+      - /var/lib/docker/volumes:/backup/docker_volumes:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/sda1/samba/backup/restic:/backup-repo/local
+      - /mnt/sda1/samba/temp:/restore
+    environment:
+      - BACKREST_DATA=/data
+      - BACKREST_CONFIG=/config/config.json
+      - XDG_CACHE_HOME=/cache
+      - TMPDIR=/tmp
+      - TZ=Europe/Vilnius
+    ports:
+      - "9898:9898"
+    restart: unless-stopped
+
+volumes:
+  workspace:
+networks:
+  web:
+    name: web
+    external: true

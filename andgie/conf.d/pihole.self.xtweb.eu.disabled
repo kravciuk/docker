@@ -1,0 +1,21 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name pihole.self.xtweb.eu;
+
+    include conf.d/system/local-network.cfg;
+    include conf.d/self.xtweb.eu.cert;
+
+    location / {
+        proxy_headers_hash_max_size 512;
+        proxy_headers_hash_bucket_size 128;
+        proxy_pass http://pihole;
+    }
+
+    proxy_set_header    Host                $host;
+    proxy_set_header    X-Real-IP           $remote_addr;
+    proxy_set_header    X-Forwarded-For     $proxy_add_x_forwarded_for;
+
+}
+
+

@@ -22,4 +22,4 @@ services:
 networks:
   web:
     name: web
-    external: true        
+    external: true

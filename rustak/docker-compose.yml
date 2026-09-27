@@ -1,0 +1,36 @@
+services:
+  server:
+    image: rustrak/rustrak-server:postgres
+    container_name: rustak
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - RUST_LOG=${RUST_LOG:-info}
+      - DATABASE_URL=postgres://${RUSTAK_DB_USER}:${RUSTAK_DB_PASSWORD}@${RUSTAK_DB_HOST}:${RUSTAK_DB_PORT:-5432}/${RUSTAK_DB_NAME}
+      - DATABASE_MAX_CONNECTIONS=${DATABASE_MAX_CONNECTIONS:-10}
+      - DATABASE_MIN_CONNECTIONS=${DATABASE_MIN_CONNECTIONS:-1}
+      - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
+      - SSL_PROXY=${SSL_PROXY:-true}
+      - PUBLIC_URL=${PUBLIC_URL:-}
+      - CREATE_SUPERUSER=${CREATE_SUPERUSER:-}
+      - RUSTRAK_LOG_TIMEZONE=${RUSTRAK_LOG_TIMEZONE:-UTC}
+      - RUSTRAK_TELEMETRY=${RUSTRAK_TELEMETRY:-on}
+    volumes:
+      - ./data/sourcemaps:/data/sourcemaps
+    restart: unless-stopped
+
+  ui:
+    image: rustrak/rustrak-ui:latest
+    container_name: rustak-ui
+    ports:
+      - "${UI_PORT:-8121}:3000"
+    environment:
+      - RUSTRAK_API_URL=http://server:8080
+    depends_on:
+      - server
+    restart: unless-stopped

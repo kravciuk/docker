@@ -1,11 +1,11 @@
 services:
   postgis:
-    image: postgis/postgis:17-master
+    image: postgis/postgis:18-3.6
     container_name: postgis
     environment:
-      POSTGRES_PASSWORD: dockerpass   
+      POSTGRES_PASSWORD: dockerpass
     volumes:
-      - postgis_data:/var/lib/postgresql/data
+      - postgis_data:/var/lib/postgresql
     ports:
       - "5432:5432"
     restart: unless-stopped

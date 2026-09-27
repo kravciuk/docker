@@ -1,0 +1,27 @@
+services:
+  couchserver:
+    container_name: couchdb
+    image: couchdb:3.3.2  # Используйте конкретную версию для стабильности
+    restart: unless-stopped
+    networks:
+      - web    
+    env_file:
+      - ./.env
+    ports:
+      - "5984:5984"
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+      - COUCHDB_SECRET=${COUCHDB_SECRET}
+      - TZ=${TZ}
+      - COUCHDB_ERL_ARGS=-setcookie mycouchcookie  # Добавьте cookie для кластера
+    volumes:
+      - couchdb_data:/opt/couchdb/data
+
+networks:
+  web:
+    name: web
+    external: true
+
+volumes:
+  couchdb_data:

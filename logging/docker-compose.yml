@@ -1,0 +1,46 @@
+services:
+
+  victorialogs:
+    image: victoriametrics/victoria-logs:latest
+    container_name: victorialogs
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:9428:9428"
+
+    volumes:
+      - ./victorialogs:/victoria-logs-data
+
+    command:
+      - "-storageDataPath=/victoria-logs-data"
+
+
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:latest
+    container_name: victoriametrics
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8428:8428"
+
+    volumes:
+      - ./victoriametrics:/victoria-metrics-data
+
+    command:
+      - "-storageDataPath=/victoria-metrics-data"
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    volumes:
+      - ./grafana:/var/lib/grafana
+
+    depends_on:
+      - victorialogs
+      - victoriametrics

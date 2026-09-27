@@ -14,8 +14,13 @@ services:
       - ./html:/usr/share/angie/html:ro
       - ./angie.conf:/etc/angie/angie.conf:ro
       - ./conf.d:/etc/angie/conf.d:ro
-      - ./logs:/var/log/angie
+      - /var/log/nginx:/var/log/angie
       - /etc/letsencrypt:/etc/letsencrypt:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: always
 
 networks:
