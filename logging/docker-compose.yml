@@ -60,6 +60,8 @@ services:
       - ./vector-data:/var/lib/vector
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/log/nginx:/var/log/nginx:ro
+      # Локальные проекты: /var/log/local/<project> -> container_name "local.<project>"
+      - /www/sigvi-main/var/logs:/var/log/local/sigvi:ro
 
     depends_on:
       - victorialogs

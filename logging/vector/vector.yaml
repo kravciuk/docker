@@ -13,6 +13,17 @@ sources:
       - /var/log/nginx/error.log
     read_from: end
 
+  # Логи локальных проектов (django-structlog, JSON, одна запись на строку):
+  # /var/log/local/<project>/*.log
+  # Проект добавляется одной строкой volume в docker-compose.yml:
+  #   - /www/<project>/var/logs:/var/log/local/<project>:ro
+  # В VictoriaLogs container_name будет "local.<project>".
+  local_django:
+    type: file
+    include:
+      - /var/log/local/*/*.log
+    read_from: end
+
   docker:
     type: docker_logs
     exclude_containers:
@@ -72,6 +83,45 @@ transforms:
       .container_name = "angie"
       del(.file)
 
+  local_django_parsed:
+    type: remap
+    inputs:
+      - local_django
+    source: |
+      # .file = /var/log/local/<project>/<name>.log
+      path_parts, perr = parse_regex(.file, r'^/var/log/local/(?P<project>[^/]+)/(?P<name>[^/]+)$')
+      if perr == null {
+        .container_name = "local." + string!(path_parts.project)
+        .log_file = path_parts.name
+      } else {
+        .container_name = "local.unknown"
+      }
+      del(.file)
+
+      # django-structlog: одна JSON-запись на строку
+      # (event, level, logger, timestamp, filename, lineno, request_id, user_id, ip, ...)
+      raw = string!(.message)
+      parsed, err = parse_json(raw)
+      if err == null && is_object(parsed) {
+        . = merge!(., parsed)
+        if exists(.event) {
+          .message = .event
+          del(.event)
+        }
+      } else {
+        # не JSON (traceback без форматтера, print и т.п.) — оставляем как есть
+        .message = raw
+      }
+
+      ts, terr = parse_timestamp(.timestamp, format: "%+")
+      if terr == null {
+        .timestamp = ts
+      } else {
+        .timestamp = now()
+      }
+
+      .source = "django"
+
   docker_parsed:
     type: remap
     inputs:
@@ -92,6 +142,7 @@ sinks:
     inputs:
       - angie_access_parsed
       - angie_error_parsed
+      - local_django_parsed
       - docker_parsed
     uri: "http://victorialogs:9428/insert/jsonline?_stream_fields=source,container_name&_msg_field=message&_time_field=timestamp"
     encoding:
