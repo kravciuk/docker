@@ -14,6 +14,10 @@ services:
     command:
       - "-storageDataPath=/victoria-logs-data"
 
+    networks:
+      - default
+      - web
+
 
   victoriametrics:
     image: victoriametrics/victoria-metrics:latest
@@ -77,3 +81,9 @@ services:
 
     depends_on:
       - victoriametrics
+
+
+networks:
+  web:
+    name: web
+    external: true
