@@ -1,0 +1,19 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - WEBSOCKET_ENABLED=true
+      - SIGNUPS_ALLOWED=true
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./vw-data:/data
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

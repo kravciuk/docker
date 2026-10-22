@@ -1,0 +1,23 @@
+services:
+  dockhand:
+    image: fnsys/dockhand:latest
+    container_name: dockhand
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vilnius
+    group_add:
+      - "988"  # GID группы docker на хосте (stat -c '%g' /var/run/docker.sock)
+    ports:
+      - "9100:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+    networks:
+      - web
+
+networks:
+  web:
+    name: web
+    external: true

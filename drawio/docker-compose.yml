@@ -4,7 +4,7 @@ version: '3'
 services:
 
   image-export:
-    image: jgraph/export-server
+    image: jgraph/export-server:latest
     container_name: drawio-export
     # expose:
     #   - "8000"
@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
   
   drawio:
-    image: jgraph/drawio
+    image: jgraph/drawio:latest
     container_name: drawio
     networks:
       - web

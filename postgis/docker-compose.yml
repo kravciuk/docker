@@ -6,6 +6,9 @@ services:
       POSTGRES_PASSWORD: dockerpass
     volumes:
       - postgis_data:/var/lib/postgresql
+    networks:
+      - default
+      - web
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -19,3 +22,8 @@ services:
 volumes:
   postgis_data:
     driver: local
+
+networks:
+  web:
+    name: web
+    external: true

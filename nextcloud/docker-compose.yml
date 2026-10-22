@@ -13,7 +13,7 @@ volumes:
 services:
   app:
     container_name: nextcloud
-    image: nextcloud
+    image: nextcloud:latest
     ports:
       - 9020:80
     volumes:

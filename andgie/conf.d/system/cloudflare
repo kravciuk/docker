@@ -14,5 +14,5 @@ done
 echo "# Generated at $(LC_ALL=C date)"
 }
 
-(cf_ips && echo "deny all; # deny all remaining ips") > cloudflare.conf
+(cf_ips && echo "deny all; # deny all remaining ips") > cloudflare.cfg
 

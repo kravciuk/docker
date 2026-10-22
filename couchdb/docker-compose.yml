@@ -1,7 +1,7 @@
 services:
   couchserver:
     container_name: couchdb
-    image: couchdb:3.3.2  # Используйте конкретную версию для стабильности
+    image: couchdb:3.5.3  # Используйте конкретную версию для стабильности
     restart: unless-stopped
     networks:
       - web    
@@ -17,6 +17,7 @@ services:
       - COUCHDB_ERL_ARGS=-setcookie mycouchcookie  # Добавьте cookie для кластера
     volumes:
       - couchdb_data:/opt/couchdb/data
+      - couchdb_config:/opt/couchdb/etc/local.d
 
 networks:
   web:
@@ -25,3 +26,4 @@ networks:
 
 volumes:
   couchdb_data:
+  couchdb_config:
