@@ -10,6 +10,10 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
 
+    networks:
+      - default
+      - web
+
     ports:
       - "5050:80"
 
